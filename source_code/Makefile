@@ -2,7 +2,7 @@ APPLICATION = Individual
 
 BOARD ?= nucleo-f401re
 
-RIOTBASE ?= $(CURDIR)/RIOT
+RIOTBASE ?= $(CURDIR)/../../../RIOT
 
 USEMODULE += periph_gpio
 USEMODULE += xtimer

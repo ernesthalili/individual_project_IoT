@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Individual project</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+    <link rel="stylesheet" href="index.css">
+    <script src="index.js"></script>
+</head>
+
+<body onload="init()">
+    <h1>Individual project</h1>
+    <p>The description of the project and the link to github repository
+        <a href="paste the link here">github_repository</a></p>
+    <div class="container">
+        <div class="chart1">
+            <h3>Number of times the box keys has been open in the past seven days</h3>
+            <canvas id="Chart1" style="width:100%;max-width:600px"></canvas>
+        </div>
+    
+        <div class="statistics">
+            <h3>Some statistics regarding the tests computed in the last week:</h3>
+            <p>The time slot in which the greatest number of tests resulted positive is : <span id="timeslot">00-24</span></p>
+            <p>Number of times the box containing the keys has been opened: <span id="neg_tests">0</span></p>
+            <p>Number of times the breathalyzer detected a value over the limits: <span id="pos_tests">0</span></p>
+            <p>Percentage of positive tests over total tests: <span id="percentage">0</span></p>
+        </div>
+        <div class="buttons">
+            <p>To open or close the box of the keys, press one of the following buttons:</p>
+
+            <button class="button button1" onclick="publish_topic_to_iotcore('open')">open</button>
+            <button class="button button2" onclick="publish_topic_to_iotcore('close')">close</button>
+        </div>
+    </div>
+
+
+
+</body>
+</html>

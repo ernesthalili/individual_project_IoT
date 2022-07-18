@@ -18,11 +18,11 @@
 #define EMCUTE_PRIO         (THREAD_PRIORITY_MAIN - 1)
 #define _IPV6_DEFAULT_PREFIX_LEN        (64U)
 #define BROKER_PORT         1885
-#define BROKER_ADDRESS      "fec0:affe::1"
+#define BROKER_ADDRESS      "2000:2::1"
 #define NUMOFSUBS           (16U)
 #define TOPIC_MAXLEN        (64U)
-#define TOPIC_IN            "topic_in"
-#define TOPIC_OUT1          ""
+#define TOPIC_IN            "topic_1"
+#define TOPIC_OUT1          "topic_2"
 
 
 
@@ -85,7 +85,7 @@ static void on_pub(const emcute_topic_t *topic, void *data, size_t len){
         printf("%c", in[i]);
     }
     puts("");
-
+/*
     char msg[len+1];
     strncpy(msg, in, len);
     msg[len] = '\0';
@@ -104,7 +104,7 @@ static void on_pub(const emcute_topic_t *topic, void *data, size_t len){
         }
     }
     puts("");
-
+*/
 }
 
 static int sub(char* topic){
@@ -145,6 +145,16 @@ static int con(void){
     size_t len = 0;
 
     ipv6_addr_from_str((ipv6_addr_t *)&gw.addr.ipv6, BROKER_ADDRESS);
+
+    //print("the result of the connection request: %d\n",emcute_con(&gw, true, topic, message, len, 0));
+    /*int result = emcute_con(&gw, true, topic, message, len, 0);
+
+    if (result == EMCUTE_OK) printf("emcute_ok");
+    else if (result == EMCUTE_NOGW) printf("emcute_nogw");
+    else if (result == EMCUTE_REJECT) printf("emcute reject");
+    else if (result == EMCUTE_TIMEOUT) printf("emcute timeout");
+  
+    return 1;*/
     
     if (emcute_con(&gw, true, topic, message, len, 0) != EMCUTE_OK) {
         printf("error: unable to connect to [%s]:%i\n", BROKER_ADDRESS, (int)gw.port);
@@ -171,17 +181,23 @@ void mqtts_init(void){
     /* start the emcute thread */+
     thread_create(stack, sizeof(stack), EMCUTE_PRIO, 0, emcute_thread, NULL, "emcute");
 
-    char * addr1 = "fec0:affe::99";  //tapsetup
+    char * addr1 = "2000:2::2";
     add_address(addr1);
+    char * addr2 = "ff02::1:ff1c:3fba";
+    add_address(addr2);
+    char * addr3 = "ff02::1:ff00:2";
+    add_address(addr3);
+
+    printf("Ciao\n");
 
     con();
-    sub(TOPIC_IN); // decalare the topic
+    sub(TOPIC_IN); 
 }
 
 int main(void){    
     
-    uint32_t dist;
-    int result;
+    //uint32_t dist;
+    //int result;
     //sensor_init();
     mqtts_init();
 	
