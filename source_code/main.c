@@ -37,10 +37,19 @@ static msg_t queue[8];
 static emcute_sub_t subscriptions[NUMOFSUBS];
 static char topics[NUMOFSUBS][TOPIC_MAXLEN];
 
+// water pump and relay
+gpio_t pin_relay = GPIO_PIN(PORT_B, 5); //D4
+
 //traffic light
 gpio_t red_pin = GPIO_PIN(PORT_A, 10); //D2
 gpio_t yellow_pin = GPIO_PIN(PORT_B, 5); //D4 
 gpio_t green_pin = GPIO_PIN(PORT_A, 6); //D12 
+
+//HY-SRF05 ultrasonic
+gpio_t trigger_pin = GPIO_PIN(PORT_A, 9); //D8
+gpio_t echo_pin = GPIO_PIN(PORT_A, 8); //D7
+uint32_t echo_time_start;
+uint32_t echo_time;
 
 
 
@@ -162,12 +171,56 @@ void mqtts_init(void){
 //***********************
 
 //Sensors & Actuators *********************
+
+// ultrasonic echo time
+void ultrasonic_time(void* arg){
+    (void) arg;
+    int val = gpio_read(echo_pin);
+	uint32_t echo_time_stop;
+
+    if(val){
+		echo_time_start = xtimer_now_usec();
+	}
+    else{
+		echo_time_stop = xtimer_now_usec();
+		echo_time = echo_time_stop - echo_time_start;
+	}
+}
+
+// ultrasonic distance measure
+int ultrasonic_distance(void){ 
+
+	uint32_t dist;
+    dist=0;
+    echo_time = 0;
+
+    gpio_clear(trigger_pin);
+    xtimer_usleep(20); 
+    gpio_set(trigger_pin);
+
+    xtimer_msleep(30); 
+
+    if(echo_time > 0){
+        dist = echo_time/58; //from datasheet
+    }
+    return dist;
+}
+
+
 void sensor_init(void){
+
+    // water pump and relay
+    gpio_init(pin_relay, GPIO_OUT);
 
     //traffic light
     gpio_init(red_pin, GPIO_OUT);
     gpio_init(yellow_pin, GPIO_OUT);
     gpio_init(green_pin, GPIO_OUT);
+
+    //ultrasonic
+    gpio_init(trigger_pin, GPIO_OUT);
+    gpio_init_int(echo_pin, GPIO_IN, GPIO_BOTH, &ultrasonic_time, NULL);
+    ultrasonic_distance(); //first read returns always 0
 
 
 }
@@ -201,6 +254,25 @@ void sensor_init(void){
 	}
     return 0;*/
 
+    // test ultrasonic
+    /*
+    printf("New distance measure\n");
+        int dist_measured = ultrasonic_distance();
+        printf("Distance measured: %d",dist_measured);
+        xtimer_sleep(2);
+    */
+
+   // test relay and pump 
+   /*
+   printf("Turn-on water pump\n");
+        gpio_set(pin_relay);
+
+        xtimer_sleep(2);
+
+        printf("Turn-off water pump\n");
+        gpio_clear(pin_relay);
+        xtimer_sleep(5);
+    */
 
 //***********************
 
@@ -212,7 +284,6 @@ int main(void){
 	
 	while(true){
         
-        xtimer_sleep(2);
 	}
     return 0;
 }
