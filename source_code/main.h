@@ -9,6 +9,9 @@ static int sub(char* topic);
 static int con(void);
 static int add_address(char* addr);
 void mqtts_init(void);
+void ultrasonic_time(void* arg);
+int ultrasonic_distance(void);
+void set_relay(int relay_state);
 void sensor_init(void);
 
 

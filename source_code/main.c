@@ -22,9 +22,16 @@
 #define NUMOFSUBS           (16U)
 #define TOPIC_MAXLEN        (64U)
 #define TOPIC_IN            "topic_1"
-#define TOPIC_OUT1          "topic_2"
+#define TOPIC_OUT           "topic_2"
 
-
+// Controlling macros 
+#define RED_ZONE 5
+#define YELLOW_ZONE 15
+#define RELAY_ON 1
+#define RELAY_OFF 0
+#define RED_COLOR 0
+#define YELLOW_COLOR 1
+#define GREEN_COLOR 2
 
 
 //to add addresses to board interface
@@ -39,6 +46,9 @@ static char topics[NUMOFSUBS][TOPIC_MAXLEN];
 
 // water pump and relay
 gpio_t pin_relay = GPIO_PIN(PORT_B, 5); //D4
+uint32_t turn_on_time; 
+uint32_t total_time_on;
+
 
 //traffic light
 gpio_t red_pin = GPIO_PIN(PORT_A, 10); //D2
@@ -50,7 +60,6 @@ gpio_t trigger_pin = GPIO_PIN(PORT_A, 9); //D8
 gpio_t echo_pin = GPIO_PIN(PORT_A, 8); //D7
 uint32_t echo_time_start;
 uint32_t echo_time;
-
 
 
 //MQTTS *****************************
@@ -207,6 +216,34 @@ int ultrasonic_distance(void){
 }
 
 
+void set_relay(int relay_state){
+
+    if(relay_state == RELAY_ON){
+        printf("Turn-on water pump\n");
+        gpio_clear(pin_relay);
+
+        turn_on_time = xtimer_now_usec();
+
+        // turn on the pump and start the time counter
+    }
+    else if (relay_state == RELAY_OFF){
+        printf("Turn-off water pump\n");
+        gpio_set(pin_relay);
+
+        turn_off_time = xtimer_now_usec();
+        total_time_on = turn_off_time-turn_on_time;
+
+        sprintf(msg, "%d", total_time_on);
+
+        //pub(TOPIC_OUT, msg);
+        
+        // turn off the pump and deliver the time it was on
+    }
+
+}
+
+
+
 void sensor_init(void){
 
     // water pump and relay
@@ -225,54 +262,7 @@ void sensor_init(void){
 
 }
 
-// test traffic light
-/*int state = 0; 
-	
-	while(true){
-        if (state==0){
-            gpio_clear(red_pin);
-            gpio_clear(yellow_pin);
-            gpio_set(green_pin);
-            state++;
-        }
 
-        else if (state==1){
-            gpio_clear(red_pin);
-            gpio_clear(green_pin);
-            gpio_set(yellow_pin);
-            state++;
-
-        }
-        else if (state==2){
-            gpio_clear(green_pin);
-            gpio_clear(yellow_pin);
-            gpio_set(red_pin);
-            state=0;
-        }
-
-        xtimer_sleep(2);
-	}
-    return 0;*/
-
-    // test ultrasonic
-    /*
-    printf("New distance measure\n");
-        int dist_measured = ultrasonic_distance();
-        printf("Distance measured: %d",dist_measured);
-        xtimer_sleep(2);
-    */
-
-   // test relay and pump 
-   /*
-   printf("Turn-on water pump\n");
-        gpio_set(pin_relay);
-
-        xtimer_sleep(2);
-
-        printf("Turn-off water pump\n");
-        gpio_clear(pin_relay);
-        xtimer_sleep(5);
-    */
 
 //***********************
 
@@ -281,9 +271,25 @@ int main(void){
     //mqtts_init();
     sensor_init();
     int state = 0; 
+    int distance = 0; 
 	
 	while(true){
-        
+        distance = ultrasonic_distance();
+
+        if (distance <= RED_ZONE){
+            set_relay(RELAY_ON);
+            set_lights(RED_COLOR);
+        }
+        else if (distance <= YELLOW_ZONE){
+            set_relay(RELAY_OFF);
+            set_lights(YELLOW_COLOR);
+        }
+        else{
+            set_relay(RELAY_OFF);
+            set_lights(GREEN_COLOR);
+        }
+
+        xtimer_sleep(5);
 	}
     return 0;
 }
