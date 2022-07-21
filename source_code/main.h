@@ -9,6 +9,8 @@ static int sub(char* topic);
 static int con(void);
 static int add_address(char* addr);
 void mqtts_init(void);
+void sensor_init(void);
+
 
 
 #endif // MAIN_FUNCTIONS

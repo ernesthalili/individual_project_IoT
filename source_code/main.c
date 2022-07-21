@@ -18,7 +18,7 @@
 #define EMCUTE_PRIO         (THREAD_PRIORITY_MAIN - 1)
 #define _IPV6_DEFAULT_PREFIX_LEN        (64U)
 #define BROKER_PORT         1885
-#define BROKER_ADDRESS      "2000:2::1"
+#define BROKER_ADDRESS      "fec0:affe::1"
 #define NUMOFSUBS           (16U)
 #define TOPIC_MAXLEN        (64U)
 #define TOPIC_IN            "topic_1"
@@ -44,7 +44,7 @@ gpio_t green_pin = GPIO_PIN(PORT_A, 6); //D12
 
 
 
-//MQTTS
+//MQTTS *****************************
 static void *emcute_thread(void *arg){
     (void)arg;
     emcute_run(BROKER_PORT, "board");
@@ -81,30 +81,11 @@ static void on_pub(const emcute_topic_t *topic, void *data, size_t len){
 
     char *in = (char *)data;
     printf("### got publication for topic '%s' [%i] ###\n", topic->name, (int)topic->id);
+    // print the message received
     for (size_t i = 0; i < len; i++) {
         printf("%c", in[i]);
     }
     puts("");
-/*
-    char msg[len+1];
-    strncpy(msg, in, len);
-    msg[len] = '\0';
-    if (strcmp(msg, "open") == 0){
-        if(box_keys==0){
-            //open box keys
-            servo_set(&servo, SERVO_MIN);
-            box_keys=1;
-            }
-    }
-    else if (strcmp(msg, "close") == 0){
-        if(box_keys==1){
-            //close box keys
-            servo_set(&servo, SERVO_MAX);
-            box_keys=0;
-        }
-    }
-    puts("");
-*/
 }
 
 static int sub(char* topic){
@@ -146,21 +127,11 @@ static int con(void){
 
     ipv6_addr_from_str((ipv6_addr_t *)&gw.addr.ipv6, BROKER_ADDRESS);
 
-    //print("the result of the connection request: %d\n",emcute_con(&gw, true, topic, message, len, 0));
-    /*int result = emcute_con(&gw, true, topic, message, len, 0);
-
-    if (result == EMCUTE_OK) printf("emcute_ok");
-    else if (result == EMCUTE_NOGW) printf("emcute_nogw");
-    else if (result == EMCUTE_REJECT) printf("emcute reject");
-    else if (result == EMCUTE_TIMEOUT) printf("emcute timeout");
-  
-    return 1;*/
-    
     if (emcute_con(&gw, true, topic, message, len, 0) != EMCUTE_OK) {
         printf("error: unable to connect to [%s]:%i\n", BROKER_ADDRESS, (int)gw.port);
         return 1;
     }
-    printf("Successfully connected to gateway at [%s]:%i\n", BROKER_ADDRESS, (int)gw.port);
+    printf("Successfully connected ");
 
     return 0;
 }
@@ -172,6 +143,7 @@ static int add_address(char* addr){
 
 //initializes the connection with the MQTT-SN broker
 void mqtts_init(void){
+
     /* the main thread needs a msg queue to be able to run `ping`*/
     msg_init_queue(queue, ARRAY_SIZE(queue));
 
@@ -181,25 +153,34 @@ void mqtts_init(void){
     /* start the emcute thread */+
     thread_create(stack, sizeof(stack), EMCUTE_PRIO, 0, emcute_thread, NULL, "emcute");
 
-    char * addr1 = "2000:2::2";
+    char * addr1 = "fec0:affe::99";
     add_address(addr1);
-    char * addr2 = "ff02::1:ff1c:3fba";
-    add_address(addr2);
-    char * addr3 = "ff02::1:ff00:2";
-    add_address(addr3);
-
-    printf("Ciao\n");
 
     con();
     sub(TOPIC_IN); 
 }
+//***********************
+
+//Sensors & Actuators *********************
+void sensor_init(void){
+
+    //traffic light
+    gpio_init(red_pin, GPIO_OUT);
+    gpio_init(yellow_pin, GPIO_OUT);
+    gpio_init(green_pin, GPIO_OUT);
+
+
+
+
+
+}
+
+
+//***********************
 
 int main(void){    
     
-    //uint32_t dist;
-    //int result;
-    //sensor_init();
-    mqtts_init();
+    //mqtts_init();
 	
 	while(true){
        

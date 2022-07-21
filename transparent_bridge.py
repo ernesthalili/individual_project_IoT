@@ -30,15 +30,10 @@ clientId = "basicPubSub"
 port=8883
 
 myAWSIoTMQTTClient = None
-print("Hello0\n")
 myAWSIoTMQTTClient = AWSIoTMQTTClient(clientId)
-print("Hello1\n")
 myAWSIoTMQTTClient.configureEndpoint(host, port)
-print("Hello2\n")
 myAWSIoTMQTTClient.configureCredentials(rootCAPath, privateKeyPath, certificatePath)
-print("Hello3\n")
 myAWSIoTMQTTClient.connect()
-print("Hello4\n")
 
 client = mqtt.Client()
 client.on_connect = on_connect
@@ -47,6 +42,5 @@ client.on_message = on_message
 myAWSIoTMQTTClient.subscribe(TOPIC_IN, 1, customCallback)
 
 client.connect("localhost", 1886, 60)
-print("Hello5\n")
 
 client.loop_forever()
