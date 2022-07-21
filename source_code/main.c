@@ -170,10 +170,36 @@ void sensor_init(void){
     gpio_init(green_pin, GPIO_OUT);
 
 
-
-
-
 }
+
+// test traffic light
+/*int state = 0; 
+	
+	while(true){
+        if (state==0){
+            gpio_clear(red_pin);
+            gpio_clear(yellow_pin);
+            gpio_set(green_pin);
+            state++;
+        }
+
+        else if (state==1){
+            gpio_clear(red_pin);
+            gpio_clear(green_pin);
+            gpio_set(yellow_pin);
+            state++;
+
+        }
+        else if (state==2){
+            gpio_clear(green_pin);
+            gpio_clear(yellow_pin);
+            gpio_set(red_pin);
+            state=0;
+        }
+
+        xtimer_sleep(2);
+	}
+    return 0;*/
 
 
 //***********************
@@ -181,10 +207,12 @@ void sensor_init(void){
 int main(void){    
     
     //mqtts_init();
+    sensor_init();
+    int state = 0; 
 	
 	while(true){
-       
-        xtimer_sleep(5);
+        
+        xtimer_sleep(2);
 	}
     return 0;
 }
