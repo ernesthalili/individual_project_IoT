@@ -11,7 +11,7 @@
 }
 
 .button1 {background-color: #ff0707;} /* Red */
-.button2 {background-color: #008CBA;} /* Blue */
+.button2 {background-color: #00ff0d;} /* Green */
 
 .container {  display: grid;
   grid-template-columns: 1fr 1fr;

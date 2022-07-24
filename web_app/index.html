@@ -9,27 +9,28 @@
 </head>
 
 <body onload="init()">
-    <h1>Individual project</h1>
-    <p>The description of the project and the link to github repository
-        <a href="paste the link here">github_repository</a></p>
+    <h1>Here2Serve</h1>
+    <p>This is the individual project for the Internet of Things course of the a.y. 2021-2022 at "Sapienza" university. The system is created to serve the user some drinks whenever requested. 
+        Here is shown a dashboard that contains informations regarding the use of the system. More specifically, we can see the time where the user has used our system and the over all usage of it. 
+        On the right we can see some statistics from the overall usage of the system. For more information regarding to the system, here is the link for the 
+        <a href="https://github.com/ernesthalili/individual_project_IoT">github_repository</a></p>
     <div class="container">
         <div class="chart1">
-            <h3>Number of times the box keys has been open in the past seven days</h3>
+            <h3>The chart shows the hour and minute as well as the overall time expressed in seconds the system is used</h3>
             <canvas id="Chart1" style="width:100%;max-width:600px"></canvas>
         </div>
     
         <div class="statistics">
-            <h3>Some statistics regarding the tests computed in the last week:</h3>
-            <p>The time slot in which the greatest number of tests resulted positive is : <span id="timeslot">00-24</span></p>
-            <p>Number of times the box containing the keys has been opened: <span id="neg_tests">0</span></p>
-            <p>Number of times the breathalyzer detected a value over the limits: <span id="pos_tests">0</span></p>
-            <p>Percentage of positive tests over total tests: <span id="percentage">0</span></p>
+            <h3>Stats:</h3>
+            <p>Last time used: <span id="last_usage">0</span></p>
+            <p>Number of times used: <span id="times_usage">0</span></p>
+            <p>Total of seconds used: <span id="seconds_usage">0</span></p>
         </div>
         <div class="buttons">
-            <p>To open or close the box of the keys, press one of the following buttons:</p>
+            <p>To start and to stop the application:</p>
 
-            <button class="button button1" onclick="publish_topic_to_iotcore('open')">open</button>
-            <button class="button button2" onclick="publish_topic_to_iotcore('close')">close</button>
+            <button class="button button1" onclick="publish_topic_to_iotcore('Stop')">Stop</button>
+            <button class="button button2" onclick="publish_topic_to_iotcore('Start')">Start</button>
         </div>
     </div>
 
