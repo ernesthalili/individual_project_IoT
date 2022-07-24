@@ -11,9 +11,15 @@ static int add_address(char* addr);
 void mqtts_init(void);
 void ultrasonic_time(void* arg);
 int ultrasonic_distance(void);
-void set_relay(int relay_state);
+void set_lights(int lights_state);
+void* set_relay(void* arg);
 void sensor_init(void);
 
-
+// color text
+void red();
+void yellow();
+void green();
+void blue();
+void reset();
 
 #endif // MAIN_FUNCTIONS

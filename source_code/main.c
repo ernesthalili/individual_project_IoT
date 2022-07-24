@@ -14,6 +14,7 @@
 #include "board.h"
 #include "main.h"
 
+
 //MQTTS
 #define EMCUTE_PRIO         (THREAD_PRIORITY_MAIN - 1)
 #define _IPV6_DEFAULT_PREFIX_LEN        (64U)
@@ -34,6 +35,9 @@
 #define GREEN_COLOR 2
 
 
+// Threads
+static char relay_stack[THREAD_STACKSIZE_DEFAULT];
+
 //to add addresses to board interface
 extern int _gnrc_netif_config(int argc, char **argv);
 
@@ -44,15 +48,25 @@ static msg_t queue[8];
 static emcute_sub_t subscriptions[NUMOFSUBS];
 static char topics[NUMOFSUBS][TOPIC_MAXLEN];
 
+// variables to handle message sending
+char msg[10];
+bool message_to_send = false;
+
+// messages to handle the message receiving
+bool system_on = true;
+char my_com ;
+
+
 // water pump and relay
 gpio_t pin_relay = GPIO_PIN(PORT_B, 5); //D4
+int relay_state = 1;
 uint32_t turn_on_time; 
 uint32_t total_time_on;
 
 
 //traffic light
 gpio_t red_pin = GPIO_PIN(PORT_A, 10); //D2
-gpio_t yellow_pin = GPIO_PIN(PORT_B, 5); //D4 
+gpio_t yellow_pin = GPIO_PIN(PORT_B, 3); //D3
 gpio_t green_pin = GPIO_PIN(PORT_A, 6); //D12 
 
 //HY-SRF05 ultrasonic
@@ -60,6 +74,7 @@ gpio_t trigger_pin = GPIO_PIN(PORT_A, 9); //D8
 gpio_t echo_pin = GPIO_PIN(PORT_A, 8); //D7
 uint32_t echo_time_start;
 uint32_t echo_time;
+bool sensor_on = false;
 
 
 //MQTTS *****************************
@@ -69,27 +84,20 @@ static void *emcute_thread(void *arg){
     return NULL;
 }
 
-
 static int pub(char* topic,char* msg){
     emcute_topic_t t;
     unsigned flags = EMCUTE_QOS_0;
 
-    printf("pub with topic: %s and name %s and flags 0x%02x\n", topic, msg, (int)flags);
-
-    /* step 1: get topic id */
     t.name = topic;
     if (emcute_reg(&t) != EMCUTE_OK) {
         puts("error: unable to obtain topic ID");
         return 1;
     }
 
-    /* step 2: publish data */
     if (emcute_pub(&t, msg, strlen(msg), flags) != EMCUTE_OK) {
         printf("error: unable to publish data to topic '%s [%i]'\n",t.name, (int)t.id);
         return 1;
     }
-
-    printf("Published %i bytes to topic '%s [%i]'\n", (int)strlen(msg), t.name, t.id);
 
     return 0;
 }
@@ -98,12 +106,17 @@ static void on_pub(const emcute_topic_t *topic, void *data, size_t len){
     (void)topic;
 
     char *in = (char *)data;
-    printf("### got publication for topic '%s' [%i] ###\n", topic->name, (int)topic->id);
-    // print the message received
-    for (size_t i = 0; i < len; i++) {
-        printf("%c", in[i]);
+    if (strcmp(in,"Start")){
+        system_on = true;
     }
-    puts("");
+    else if (strcmp(in,"Stop")){
+        system_on = false;
+    }
+    else {
+        printf("Received command not correct\n");
+    }
+    printf("\n");
+
 }
 
 static int sub(char* topic){
@@ -130,12 +143,8 @@ static int sub(char* topic){
         return 1;
     }
 
-    printf("Now subscribed to %s\n", topic);
-    
-
     return 0;
 }
-
 
 static int con(void){
     sock_udp_ep_t gw = { .family = AF_INET6, .port = BROKER_PORT };
@@ -149,8 +158,6 @@ static int con(void){
         printf("error: unable to connect to [%s]:%i\n", BROKER_ADDRESS, (int)gw.port);
         return 1;
     }
-    printf("Successfully connected ");
-
     return 0;
 }
 
@@ -193,6 +200,7 @@ void ultrasonic_time(void* arg){
     else{
 		echo_time_stop = xtimer_now_usec();
 		echo_time = echo_time_stop - echo_time_start;
+        
 	}
 }
 
@@ -210,39 +218,48 @@ int ultrasonic_distance(void){
     xtimer_msleep(30); 
 
     if(echo_time > 0){
-        dist = echo_time/58; //from datasheet
+        dist = echo_time/58; 
     }
     return dist;
 }
 
+void set_lights(int lights_state){
 
-void set_relay(int relay_state){
+    if (lights_state == GREEN_COLOR){
 
-    if(relay_state == RELAY_ON){
-        printf("Turn-on water pump\n");
-        gpio_clear(pin_relay);
-
-        turn_on_time = xtimer_now_usec();
-
-        // turn on the pump and start the time counter
+        gpio_clear(red_pin);
+        gpio_clear(yellow_pin);
+        gpio_set(green_pin);
     }
-    else if (relay_state == RELAY_OFF){
-        printf("Turn-off water pump\n");
-        gpio_set(pin_relay);
-
-        turn_off_time = xtimer_now_usec();
-        total_time_on = turn_off_time-turn_on_time;
-
-        sprintf(msg, "%d", total_time_on);
-
-        //pub(TOPIC_OUT, msg);
-        
-        // turn off the pump and deliver the time it was on
+    else if (lights_state == YELLOW_COLOR){
+        gpio_clear(red_pin);
+        gpio_clear(green_pin);
+        gpio_set(yellow_pin);
     }
+    else if (lights_state == RED_COLOR){
+        gpio_clear(green_pin);
+        gpio_clear(yellow_pin);
+        gpio_set(red_pin);
+    }
+    else {print("Lights command not found\n");}
 
+    return; 
 }
 
-
+void* set_relay(void* arg){
+    (void) arg;
+    
+    while(true){
+        if(relay_state == RELAY_ON  && sensor_on == false){
+            gpio_clear(pin_relay);
+        }
+        else if (relay_state == RELAY_OFF || sensor_on == true){
+            gpio_set(pin_relay);
+        }
+        xtimer_msleep(50);
+    }
+    return NULL;
+}
 
 void sensor_init(void){
 
@@ -259,37 +276,129 @@ void sensor_init(void){
     gpio_init_int(echo_pin, GPIO_IN, GPIO_BOTH, &ultrasonic_time, NULL);
     ultrasonic_distance(); //first read returns always 0
 
-
 }
-
-
-
 //***********************
+
+//******** coloured text **********
+void red(){
+    printf("\033[1;31m");
+}
+void yellow(){
+    printf("\033[1;33m");
+}
+void green(){
+    printf("\033[1;32m");
+}
+void blue(){
+    printf("\033[1;34m");
+}
+void reset(){
+    printf("\033[0m");
+}
+//***********
 
 int main(void){    
     
-    //mqtts_init();
+    mqtts_init();
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    printf("Here2Serve\n\n\n\n");
+
     sensor_init();
-    int state = 0; 
-    int distance = 0; 
-	
+
+    thread_create(relay_stack,sizeof(relay_stack),THREAD_PRIORITY_MAIN -1, 0,set_relay, NULL, "relay_logic");
+    
+    int distance = 100;
+    xtimer_msleep(100);
+
 	while(true){
-        distance = ultrasonic_distance();
 
-        if (distance <= RED_ZONE){
-            set_relay(RELAY_ON);
-            set_lights(RED_COLOR);
-        }
-        else if (distance <= YELLOW_ZONE){
-            set_relay(RELAY_OFF);
-            set_lights(YELLOW_COLOR);
-        }
-        else{
-            set_relay(RELAY_OFF);
+        if (system_on == false){
+            printf("SYSTEM OFF\n");
+            relay_state = RELAY_OFF;
             set_lights(GREEN_COLOR);
-        }
 
-        xtimer_sleep(5);
+            if (message_to_send == true){
+                uint32_t turn_off_time = xtimer_now_usec();
+                total_time_on = turn_off_time - turn_on_time;
+                uint32_t seconds = total_time_on / 1000000;
+                sprintf(msg, "%ld", total_time_on);
+
+                blue();
+                printf("Usage time: %ld sec\n",seconds);
+                reset();
+
+                pub(TOPIC_OUT, msg);
+                message_to_send = false;
+            }
+        }
+        else {
+            sensor_on = true;
+            xtimer_msleep(60);
+            distance = ultrasonic_distance();
+
+            blue();
+            printf("Distance: %ld\n",distance);
+            reset();
+
+            if (distance <= RED_ZONE){
+                red();
+                printf("Red zone\n");
+                reset();
+                relay_state = RELAY_ON;
+                set_lights(RED_COLOR);
+                if (message_to_send == false){
+                    turn_on_time = xtimer_now_usec();
+                    message_to_send = true;
+                }
+            
+            }
+            else if (distance <= YELLOW_ZONE){
+                yellow();
+                printf("Yellow zone\n");
+                reset();
+                relay_state = RELAY_OFF;
+                set_lights(YELLOW_COLOR);
+
+                if (message_to_send == true){
+                    uint32_t turn_off_time = xtimer_now_usec();
+                    total_time_on = turn_off_time - turn_on_time;
+                    uint32_t seconds = total_time_on / 1000000;
+                    sprintf(msg, "%ld", total_time_on);
+
+                    blue();
+                    printf("Usage time: %ld sec\n",seconds);
+                    reset();
+
+                    pub(TOPIC_OUT, msg);
+                    message_to_send = false;
+                }
+            
+            }
+            else {
+                green();
+                printf("Green zone\n");
+                reset();
+                relay_state = RELAY_OFF;
+                set_lights(GREEN_COLOR);
+
+                if (message_to_send == true){
+                    uint32_t turn_off_time = xtimer_now_usec();
+                    total_time_on = turn_off_time - turn_on_time;
+                    uint32_t seconds = total_time_on / 1000000;
+                    sprintf(msg, "%ld", total_time_on);
+
+                    blue();
+                    printf("Usage time: %ld sec\n",seconds);
+                    reset();
+
+                    pub(TOPIC_OUT, msg);
+                    message_to_send = false;
+                }
+            
+            }
+            sensor_on = false;
+        }
+        xtimer_msleep(1000);
 	}
     return 0;
 }
