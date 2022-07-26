@@ -34,24 +34,3 @@
   grid-area: buttons;
   margin-top: 40px;
 }
-
-table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 80%;
-  
-}
-
-td, th {
-  border: 1px solid #dddddd;
-  text-align: left;
-  padding: 8px;
-}
-
-
-th {
-  position: sticky;
-  background-color: white;
-  z-index: 2;
-  top: 0;
-}

@@ -4,6 +4,7 @@ var colors = ["blue", "red", "black"]
 var current_color = 0;
 var values_y = [];
 var ch1;
+var input = [];
     
 
 function publish_topic_to_iotcore(msg){
@@ -21,24 +22,29 @@ function publish_topic_to_iotcore(msg){
     .then()
 }
 
-function displayDataOnChart(input){
+function displayDataOnChart(data_input){
 
-    input = JSON.parse(input);  // received from API
+    data_converted = JSON.parse(data_input);  // received from API
     //date_test = new Date(parseInt(values[i]["ts"]));
 
-    for(let i=0;i < input.length; i++){
-        current_date=new Date();
-        hour = current_date.getHours(); // get the hours 
-        minute = current_date.getMinutes(); // get the minute
-        label = "Time: " + hour.toString()+":" + minute.toString();  // form the label for the coloumn
-
+    for(let i=0;i < data_converted.length; i++){
         coluomns_colors.push(colors[current_color%3]); // assign a color
         current_color++;
         
+        label = data_converted[i]["time"];
+        label = "Time:"+label;
         ch1.data.labels.push(label);  //add the coloumn
-        ch1.data.datasets[0].data[i] = input[i]; // add the values of the coloumn
+        ch1.data.datasets[0].data.push(data_converted[i]["value"]); // add the values of the coloumn
         ch1.update();
+        input.push([data_converted[i]["time"],data_converted[i]["value"]]);
     }
+    document.getElementById("last_usage").innerHTML = input[input.length-1][0];
+    document.getElementById("times_usage").innerHTML = input.length;
+    total_seconds = 0;
+    for(let i=0;i < input.length; i++){
+        total_seconds += parseInt(input[i][1]);
+    }
+    document.getElementById("seconds_usage").innerHTML = total_seconds;
 
 }
 

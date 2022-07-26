@@ -1,7 +1,6 @@
 APPLICATION = Individual
 
 BOARD ?= nucleo-f401re
-
 RIOTBASE ?= $(CURDIR)/../../../RIOT
 
 USEMODULE += periph_gpio
