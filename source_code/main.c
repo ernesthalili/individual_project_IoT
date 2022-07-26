@@ -299,7 +299,7 @@ void reset(){
 
 int main(void){    
     
-    mqtts_init();
+    //mqtts_init();
     printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
     printf("Here2Serve\n\n\n\n");
 
