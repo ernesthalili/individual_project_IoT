@@ -12,8 +12,8 @@ In this section there are going to be shown the physical elements of the system,
 The sensor we are using here, as we said before, is an ultrasonic sensor. It measures the smallest distance of the objects from the sensor. The approach that this sensor uses to measure the smallest distance is by sending a trigger signal ans receiving an echo signal. The range is increased from 3 meters to SRF04 to 4 meters in this type.
 You only need to supply a short 10uS pulse to the trigger input to start the ranging. The SRF05 will send out an 8 cycle burst of ultrasound at 40khz and raise its echo line high. It then listens for an echo, and as soon as it detects one it lowers the echo line again. The echo line is therefore a pulse whose width is proportional to the distance to the object. By timing the pulse it is possible to calculate the range in inches/centimeters or anything else. If nothing is detected then the SRF05 will lower its echo line anyway after about 30mS.
 The system considers this distance and when needed, changes the state of the system. More specifically, if this distance is larger than 15 cm, the system doesn't react since it is considered that there is no intention o using the system if the system is located that far. Instead if the distance is between 5-15 cm, there may be intention to use the system, but still we have add the possibility to notify the user that if it comes any further, the state of the system may change. Finally, if the smallest object/person is located not further than 5 cm, the system changes its state and activate an relay.
-<img src="images/SRF05_ultrasonic_sensor.png
-" alt="image" width="200"/><br>
+
+<img src="images/SRF05_ultrasonic_sensor.png" alt="image" width="200"/><br>
 
 ### Actuators
 - **Mini semaphore**
@@ -22,6 +22,7 @@ It has three LEDs: red, yellow, and green. They are used to provide feedback on 
 
 - **1 channel relay**
 This relay has the only purpose the activate the water pump. It is connected to the 3,3v, ground and an activation pin. This pin is activated when the distance measured is not more than 5 cm. When this happen, to the pin where the water pump is connected now has a potential of 5v. 
+
 <img src="images/1_channel_relay.png" width="200"/><br>
 
 
